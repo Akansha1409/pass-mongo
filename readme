@@ -1,0 +1,19 @@
+## Introduction
+
+Password Manager is a web application that allows users to securely store and manage their passwords. It provides features such as adding, viewing, editing, and deleting passwords, with a user-friendly interface.
+
+## Features
+
+- Add new passwords
+- View stored passwords
+- Edit existing passwords
+- Delete passwords
+- Copy passwords to clipboard
+- Toggle password visibility
+
+## Tech Stack
+
+- Frontend: React, Tailwind CSS
+- Backend: Node.js, Express
+- Database: MongoDB
+- Others: UUID, React-Toastify
