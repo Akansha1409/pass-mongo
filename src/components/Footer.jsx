@@ -7,7 +7,7 @@ const Footer = () => {
                 <span className='text-green-500'> &lt;</span>
                 <span>Pass</span><span className='text-green-500'>OP/&gt;</span>
             </div>
-            <div className='flex justify-center items-center'> Created with <img className='w-7 mx-2' src="public/heart.png" alt="" /> by Akansha </div>
+            <div className='flex justify-center items-center'> Created with <img className='w-7 mx-2' src="/heart.png" alt="" /> by Akansha </div>
         </div>
     )
 }
