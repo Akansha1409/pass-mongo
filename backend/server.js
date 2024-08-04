@@ -1,73 +1,45 @@
 const express = require('express');
-const dotenv = require('dotenv');
-const { MongoClient } = require('mongodb'); 
-const bodyparser = require('body-parser');
-const cors = require('cors');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const { v4: uuidv4 } = require('uuid');
 
-dotenv.config();
-
-// Connecting to the MongoDB Client
-const url = process.env.MONGO_URI;
-const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
-
-client.connect()
-    .then(() => {
-        console.log('Connected to MongoDB');
-    })
-    .catch(err => {
-        console.error('Failed to connect to MongoDB', err);
-    });
-
-// App & Database
-const dbName = 'password';
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Middleware
-app.use(bodyparser.json());
-app.use(cors());
+app.use(bodyParser.json());
+app.use(express.static('public'));
 
-// Get all the passwords
-app.get('/', async (req, res) => {
-    try {
-        const db = client.db(dbName);
-        const collection = db.collection('passwords');
-        const findResult = await collection.find({}).toArray();
-        res.json(findResult);
-    } catch (err) {
-        console.error('Failed to get passwords', err);
-        res.status(500).send('Internal Server Error');
-    }
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://akanshakalyan1409:o7k4b8FpmFg1fHnw@cluster0.4jyksj6.mongodb.net/', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 });
 
-// Save a password
-app.post('/', async (req, res) => { 
-    try {
-        const password = req.body;
-        const db = client.db(dbName);
-        const collection = db.collection('passwords');
-        const findResult = await collection.insertOne(password);
-        res.send({ success: true, result: findResult });
-    } catch (err) {
-        console.error('Failed to save password', err);
-        res.status(500).send('Internal Server Error');
-    }
+// Password Schema
+const passwordSchema = new mongoose.Schema({
+  id: { type: String, default: uuidv4 },
+  value: String
 });
 
-// Delete a password by id
-app.delete('/', async (req, res) => { 
-    try {
-        const { id } = req.body;
-        const db = client.db(dbName);
-        const collection = db.collection('passwords');
-        const findResult = await collection.deleteOne({ id });
-        res.send({ success: true, result: findResult });
-    } catch (err) {
-        console.error('Failed to delete password', err);
-        res.status(500).send('Internal Server Error');
-    }
+const Password = mongoose.model('Password', passwordSchema);
+
+// Routes
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/../public/index.html');
+});
+
+app.post('/save-password', async (req, res) => {
+  const { value } = req.body;
+  const password = new Password({ value });
+  try {
+    await password.save();
+    res.status(200).send('Password saved');
+  } catch (error) {
+    res.status(500).send('Error saving password');
+  }
 });
 
 app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}/`);
+  console.log(`Server running on port ${port}`);
 });
