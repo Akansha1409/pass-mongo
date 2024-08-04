@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { v4 as uuidv4 } from 'uuid';  // Import uuid
 
 const Manager = () => {
     const ref = useRef();
@@ -8,13 +9,16 @@ const Manager = () => {
     const [form, setForm] = useState({ site: "", username: "", password: "" });
     const [passwordArray, setPasswordArray] = useState([]);
 
+    // Fetch passwords from backend
     const getPasswords = async () => {
         try {
             const req = await fetch("http://localhost:3000/");
+            if (!req.ok) throw new Error("Network response was not ok");
             const passwords = await req.json();
             setPasswordArray(passwords);
         } catch (error) {
             console.error("Failed to fetch passwords:", error);
+            toast('Failed to fetch passwords. Check server status.', { type: "error" });
         }
     };
 
@@ -22,6 +26,7 @@ const Manager = () => {
         getPasswords();
     }, []);
 
+    // Copy text to clipboard
     const copyText = (text) => {
         toast('Copied to clipboard!', {
             position: "top-right",
@@ -36,6 +41,7 @@ const Manager = () => {
         navigator.clipboard.writeText(text);
     };
 
+    // Show or hide password
     const showPassword = () => {
         if (passwordRef.current.type === "password") {
             passwordRef.current.type = "text";
@@ -46,18 +52,18 @@ const Manager = () => {
         }
     };
 
+    // Save a new password
     const savePassword = async () => {
         if (form.site.length > 3 && form.username.length > 3 && form.password.length > 3) {
-            // Load uuid dynamically
-            const { v4: uuidv4 } = await import('https://cdn.skypack.dev/uuid');
             const newPassword = { ...form, id: uuidv4() };
             setPasswordArray([...passwordArray, newPassword]);
             try {
-                await fetch("http://localhost:3000/", {
+                const response = await fetch("http://localhost:3000/", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(newPassword)
                 });
+                if (!response.ok) throw new Error("Failed to save password");
                 setForm({ site: "", username: "", password: "" });
                 toast('Password saved!', {
                     position: "top-right",
@@ -71,22 +77,24 @@ const Manager = () => {
                 });
             } catch (error) {
                 console.error("Failed to save password:", error);
-                toast('Error: Password not saved!');
+                toast('Error: Password not saved!', { type: "error" });
             }
         } else {
-            toast('Error: Password not saved!');
+            toast('Error: Password not saved!', { type: "error" });
         }
     };
 
+    // Delete a password
     const deletePassword = async (id) => {
-        if (confirm("Do you really want to delete this password?")) {
+        if (window.confirm("Do you really want to delete this password?")) {
             setPasswordArray(passwordArray.filter(item => item.id !== id));
             try {
-                await fetch("http://localhost:3000/", {
+                const response = await fetch("http://localhost:3000/", {
                     method: "DELETE",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ id })
                 });
+                if (!response.ok) throw new Error("Failed to delete password");
                 toast('Password Deleted!', {
                     position: "top-right",
                     autoClose: 5000,
@@ -98,17 +106,20 @@ const Manager = () => {
                 });
             } catch (error) {
                 console.error("Failed to delete password:", error);
-                toast('Error: Password not deleted!');
+                toast('Error: Password not deleted!', { type: "error" });
             }
         }
     };
 
+    // Edit a password
     const editPassword = (id) => {
         const passwordToEdit = passwordArray.find(item => item.id === id);
         setForm(passwordToEdit);
-        setPasswordArray(passwordArray.filter(item => item.id !== id));
+        // Optionally, remove the password from the list while editing
+        // setPasswordArray(passwordArray.filter(item => item.id !== id));
     };
 
+    // Handle form input changes
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
@@ -198,8 +209,8 @@ const Manager = () => {
                                     </td>
                                     <td className='py-2 border border-white text-center'>
                                         <div className='flex items-center justify-center gap-2'>
-                                            <button onClick={() => editPassword(item.id)}>Edit</button>
-                                            <button onClick={() => deletePassword(item.id)}>Delete</button>
+                                            <button onClick={() => editPassword(item.id)} className='bg-blue-500 text-white rounded-full px-4 py-1 hover:bg-blue-400'>Edit</button>
+                                            <button onClick={() => deletePassword(item.id)} className='bg-red-500 text-white rounded-full px-4 py-1 hover:bg-red-400'>Delete</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -213,3 +224,5 @@ const Manager = () => {
 };
 
 export default Manager;
+
+

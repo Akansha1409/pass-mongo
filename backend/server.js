@@ -1,28 +1,30 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const { MongoClient } = require('mongodb');
-const bodyParser = require('body-parser');
+const { MongoClient } = require('mongodb'); 
+const bodyparser = require('body-parser');
 const cors = require('cors');
 
 dotenv.config();
 
 // Connecting to the MongoDB Client
 const url = process.env.MONGO_URI;
-const dbName = process.env.DB_NAME;
-
-// const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
-const client = new MongoClient(url);
+const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
 
 client.connect()
-    .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.error('Failed to connect to MongoDB', err));
+    .then(() => {
+        console.log('Connected to MongoDB');
+    })
+    .catch(err => {
+        console.error('Failed to connect to MongoDB', err);
+    });
 
 // App & Database
+const dbName = 'password';
 const app = express();
 const port = 3000;
 
 // Middleware
-app.use(bodyParser.json());
+app.use(bodyparser.json());
 app.use(cors());
 
 // Get all the passwords
@@ -32,45 +34,40 @@ app.get('/', async (req, res) => {
         const collection = db.collection('passwords');
         const findResult = await collection.find({}).toArray();
         res.json(findResult);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch passwords' });
+    } catch (err) {
+        console.error('Failed to get passwords', err);
+        res.status(500).send('Internal Server Error');
     }
 });
 
 // Save a password
-app.post('/', async (req, res) => {
+app.post('/', async (req, res) => { 
     try {
         const password = req.body;
         const db = client.db(dbName);
         const collection = db.collection('passwords');
-        const insertResult = await collection.insertOne(password);
-        res.json({ success: true, result: insertResult });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to save password' });
+        const findResult = await collection.insertOne(password);
+        res.send({ success: true, result: findResult });
+    } catch (err) {
+        console.error('Failed to save password', err);
+        res.status(500).send('Internal Server Error');
     }
 });
 
 // Delete a password by id
-app.delete('/', async (req, res) => {
+app.delete('/', async (req, res) => { 
     try {
         const { id } = req.body;
         const db = client.db(dbName);
         const collection = db.collection('passwords');
-        const deleteResult = await collection.deleteOne({ id });
-        res.json({ success: true, result: deleteResult });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to delete password' });
+        const findResult = await collection.deleteOne({ id });
+        res.send({ success: true, result: findResult });
+    } catch (err) {
+        console.error('Failed to delete password', err);
+        res.status(500).send('Internal Server Error');
     }
 });
 
-// Close MongoDB connection on server shutdown
-process.on('SIGINT', () => {
-    client.close().then(() => {
-        console.log('MongoDB connection closed');
-        process.exit(0);
-    });
-});
-
 app.listen(port, () => {
-    console.log(`Example app listening on http://localhost:${port}`);
+    console.log(`Server running at http://localhost:${port}/`);
 });
